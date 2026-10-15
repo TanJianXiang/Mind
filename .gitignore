@@ -1,0 +1,8 @@
+# 备份与临时文件
+backups/
+shot_*.png
+*.log
+
+# 系统文件
+Thumbs.db
+.DS_Store
