@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xinji-v5';
+const CACHE_NAME = 'xinji-v6';
 const urlsToCache = [
   './',
   './index.html',

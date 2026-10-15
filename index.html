@@ -285,10 +285,11 @@
                                 <span class="hidden md:inline text-sm font-medium">用户</span>
                                 <i class="fa fa-caret-down text-xs"></i>
                             </button>
-                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 hidden">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="switchWindow('profile')">个人中心</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="switchWindow('settings')">设置</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" id="logoutBtn">退出登录</a>
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 hidden z-50">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="switchWindow('profile');document.getElementById('userMenu').classList.add('hidden')">个人中心</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="switchWindow('settings');document.getElementById('userMenu').classList.add('hidden')">设置</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hidden" id="menuLoginItem">登录 / 注册</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50" id="logoutBtn">退出登录</a>
                             </div>
                         </div>
                     </div>
@@ -1439,6 +1440,75 @@
                                 <p class="font-semibold text-secondary mb-2"><i class="fa fa-database mr-1"></i> 数据与平台层</p>
                                 <p class="text-gray-600">LocalStorage 本地持久化保障隐私、Service Worker 离线缓存、PWA 可安装架构</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 设置窗口 -->
+            <div id="settings" class="window window-hidden">
+                <div class="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
+                    <h2 class="text-2xl font-bold text-neutral mb-6">设置</h2>
+
+                    <!-- 账号信息 -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-neutral mb-3 flex items-center"><i class="fa fa-user-circle text-primary mr-2"></i>账号</h3>
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
+                                    <img src="icons/user-avatar.png" alt="用户" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <p id="settingsUserName" class="font-medium text-neutral">未登录</p>
+                                    <p id="settingsUserEmail" class="text-sm text-gray-500">登录后可同步管理个人数据</p>
+                                </div>
+                            </div>
+                            <button id="settingsAuthBtn" class="px-4 py-2 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 transition-colors">登录 / 注册</button>
+                        </div>
+                    </div>
+
+                    <!-- 主题设置 -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-neutral mb-3 flex items-center"><i class="fa fa-paint-brush text-primary mr-2"></i>主题外观</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <button class="p-3 rounded-xl border-2 border-transparent hover:border-primary/30 transition-all text-center" onclick="switchTheme('default')">
+                                <div class="w-full h-10 rounded-lg mb-2" style="background: linear-gradient(135deg, #fdf2f8, #e0e7ff);"></div>
+                                <span class="text-sm text-gray-700">默认主题</span>
+                            </button>
+                            <button class="p-3 rounded-xl border-2 border-transparent hover:border-primary/30 transition-all text-center" onclick="switchTheme('dark')">
+                                <div class="w-full h-10 rounded-lg mb-2" style="background: linear-gradient(135deg, #0f172a, #1e293b);"></div>
+                                <span class="text-sm text-gray-700">夜间主题</span>
+                            </button>
+                            <button class="p-3 rounded-xl border-2 border-transparent hover:border-primary/30 transition-all text-center" onclick="switchTheme('pink')">
+                                <div class="w-full h-10 rounded-lg mb-2" style="background: linear-gradient(135deg, #fdf2f8, #fce7f3);"></div>
+                                <span class="text-sm text-gray-700">治愈粉</span>
+                            </button>
+                            <button class="p-3 rounded-xl border-2 border-transparent hover:border-primary/30 transition-all text-center" onclick="switchTheme('star')">
+                                <div class="w-full h-10 rounded-lg mb-2" style="background: linear-gradient(135deg, #0c1445, #1a237e);"></div>
+                                <span class="text-sm text-gray-700">星空蓝</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 数据管理 -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-neutral mb-3 flex items-center"><i class="fa fa-database text-primary mr-2"></i>数据管理</h3>
+                        <div class="p-4 bg-gray-50 rounded-xl space-y-3">
+                            <p class="text-sm text-gray-500">你的聊天记录、情绪艺术作品、日记等数据均存储在本地浏览器中，不会上传到服务器。</p>
+                            <button id="clearDataBtn" class="px-4 py-2 rounded-lg bg-red-50 text-red-600 text-sm border border-red-200 hover:bg-red-100 transition-colors">
+                                <i class="fa fa-trash-o mr-1"></i>清除全部本地数据
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 关于 -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-neutral mb-3 flex items-center"><i class="fa fa-info-circle text-primary mr-2"></i>关于</h3>
+                        <div class="p-4 bg-gray-50 rounded-xl flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700 font-medium">心迹 v2.0</p>
+                                <p class="text-xs text-gray-500 mt-1">AI情感陪伴与情绪艺术生成系统</p>
+                            </div>
+                            <button class="text-primary text-sm hover:underline" onclick="switchWindow('about')">查看作品介绍</button>
                         </div>
                     </div>
                 </div>
@@ -3614,96 +3684,72 @@
                 });
             }
 
-            // 登录表单提交
+            // 本地账号体系工具函数
+            function getAccounts() {
+                return JSON.parse(localStorage.getItem('xinji_accounts') || '{}');
+            }
+            function encodePwd(pwd) {
+                return btoa(unescape(encodeURIComponent(pwd)));
+            }
+
+            // 登录表单提交（本地账号校验）
             if (loginForm) {
                 loginForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    const email = document.getElementById('loginEmail').value;
+                    const email = document.getElementById('loginEmail').value.trim();
                     const password = document.getElementById('loginPassword').value;
-                    
+
                     if (email && password) {
-                        // 调用后端API登录
-                        fetch('http://localhost:8000/api/login', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ email, password })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                localStorage.setItem('user', JSON.stringify({ 
-                                    id: data.user_id, 
-                                    name: data.name, 
-                                    email: data.email 
-                                }));
-                                loginModal.classList.add('hidden');
-                                updateUserStatus();
-                                alert('登录成功！');
-                            } else {
-                                alert(data.detail || '登录失败');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            // 如果API调用失败，使用模拟登录
-                            localStorage.setItem('user', JSON.stringify({ id: 1, name: '用户', email }));
-                            loginModal.classList.add('hidden');
-                            updateUserStatus();
-                            alert('登录成功！');
-                        });
+                        const accounts = getAccounts();
+                        const account = accounts[email];
+                        if (!account) {
+                            alert('该邮箱尚未注册，请先注册账号');
+                            return;
+                        }
+                        if (account.password !== encodePwd(password)) {
+                            alert('密码错误，请重试');
+                            return;
+                        }
+                        localStorage.setItem('user', JSON.stringify({
+                            id: account.id,
+                            name: account.name,
+                            email: account.email
+                        }));
+                        loginModal.classList.add('hidden');
+                        updateUserStatus();
+                        alert('欢迎回来，' + account.name + '！');
                     } else {
                         alert('请填写所有字段');
                     }
                 });
             }
 
-            // 注册表单提交
+            // 注册表单提交（本地账号创建）
             if (registerForm) {
                 registerForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    const name = document.getElementById('registerName').value;
-                    const email = document.getElementById('registerEmail').value;
+                    const name = document.getElementById('registerName').value.trim();
+                    const email = document.getElementById('registerEmail').value.trim();
                     const password = document.getElementById('registerPassword').value;
                     const confirmPassword = document.getElementById('confirmPassword').value;
-                    
+
                     if (name && email && password && confirmPassword) {
-                        if (password === confirmPassword) {
-                            // 调用后端API注册
-                            fetch('http://localhost:8000/api/register', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({ name, email, password })
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    localStorage.setItem('user', JSON.stringify({ 
-                                        id: data.user_id, 
-                                        name: name, 
-                                        email: email 
-                                    }));
-                                    registerModal.classList.add('hidden');
-                                    updateUserStatus();
-                                    alert('注册成功！');
-                                } else {
-                                    alert(data.detail || '注册失败');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                // 如果API调用失败，使用模拟注册
-                                localStorage.setItem('user', JSON.stringify({ id: 1, name, email }));
-                                registerModal.classList.add('hidden');
-                                updateUserStatus();
-                                alert('注册成功！');
-                            });
-                        } else {
+                        if (password !== confirmPassword) {
                             alert('两次输入的密码不一致');
+                            return;
                         }
+                        const accounts = getAccounts();
+                        if (accounts[email]) {
+                            alert('该邮箱已注册，请直接登录');
+                            return;
+                        }
+                        const userId = 'u_' + hashString(email);
+                        accounts[email] = { id: userId, name, email, password: encodePwd(password) };
+                        localStorage.setItem('xinji_accounts', JSON.stringify(accounts));
+                        localStorage.setItem('user', JSON.stringify({ id: userId, name, email }));
+                        registerModal.classList.add('hidden');
+                        updateUserStatus();
+                        alert('注册成功，欢迎来到心迹！');
                     } else {
                         alert('请填写所有字段');
                     }
@@ -3712,10 +3758,53 @@
 
             // 退出登录
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', () => {
+                logoutBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
                     localStorage.removeItem('user');
+                    userMenu.classList.add('hidden');
                     updateUserStatus();
                     alert('已退出登录');
+                });
+            }
+
+            // 菜单中的「登录/注册」入口
+            const menuLoginItem = document.getElementById('menuLoginItem');
+            if (menuLoginItem) {
+                menuLoginItem.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    userMenu.classList.add('hidden');
+                    loginModal.classList.remove('hidden');
+                });
+            }
+
+            // 设置页：账号按钮
+            const settingsAuthBtn = document.getElementById('settingsAuthBtn');
+            if (settingsAuthBtn) {
+                settingsAuthBtn.addEventListener('click', () => {
+                    const user = JSON.parse(localStorage.getItem('user'));
+                    if (user) {
+                        if (confirm('确定要退出当前账号吗？')) {
+                            localStorage.removeItem('user');
+                            updateUserStatus();
+                        }
+                    } else {
+                        loginModal.classList.remove('hidden');
+                    }
+                });
+            }
+
+            // 设置页：清除本地数据
+            const clearDataBtn = document.getElementById('clearDataBtn');
+            if (clearDataBtn) {
+                clearDataBtn.addEventListener('click', () => {
+                    if (confirm('将删除所有聊天记录、艺术作品、日记和账号数据，且不可恢复。确定继续吗？')) {
+                        const theme = localStorage.getItem('xinji-theme');
+                        localStorage.clear();
+                        if (theme) localStorage.setItem('xinji-theme', theme);
+                        updateUserStatus();
+                        alert('本地数据已清除');
+                        location.reload();
+                    }
                 });
             }
 
@@ -3733,6 +3822,8 @@
             function updateUserStatus() {
                 const user = JSON.parse(localStorage.getItem('user'));
                 const userMenuBtn = document.getElementById('userMenuBtn');
+                const menuLoginItem = document.getElementById('menuLoginItem');
+                const logoutBtnEl = document.getElementById('logoutBtn');
                 if (userMenuBtn) {
                     if (user) {
                         userMenuBtn.querySelector('span').textContent = user.name || '用户';
@@ -3740,6 +3831,16 @@
                         userMenuBtn.querySelector('span').textContent = '未登录';
                     }
                 }
+                // 菜单项按登录状态切换显示
+                if (menuLoginItem) menuLoginItem.classList.toggle('hidden', !!user);
+                if (logoutBtnEl) logoutBtnEl.classList.toggle('hidden', !user);
+                // 设置页账号信息
+                const settingsUserName = document.getElementById('settingsUserName');
+                const settingsUserEmail = document.getElementById('settingsUserEmail');
+                const settingsAuthBtn = document.getElementById('settingsAuthBtn');
+                if (settingsUserName) settingsUserName.textContent = user ? (user.name || '用户') : '未登录';
+                if (settingsUserEmail) settingsUserEmail.textContent = user ? (user.email || '') : '登录后可同步管理个人数据';
+                if (settingsAuthBtn) settingsAuthBtn.textContent = user ? '退出登录' : '登录 / 注册';
             }
 
             // 初始化用户状态
