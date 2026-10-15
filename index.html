@@ -2426,16 +2426,55 @@
             }
         }
         
+        // 最近一幅作品的AI识别情绪词（如"自嘲"，优先于固定分类标签展示）
+        let lastArtEmotionLabel = null;
+
+        // AI情绪转译：用 GLM 理解隐喻/自嘲/反讽背后的真实情绪，并转译为文生图模型擅长的具象画面描述
+        async function interpretEmotionWithAI(emotionText) {
+            const response = await fetch(ZHIPU_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${ZHIPU_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'glm-4-flash',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: '你是情绪艺术转译师。用户会输入一段情绪描述（可能含有隐喻、自嘲、反讽、诗意表达）。请输出 JSON：{"emotion":"happy|sad|anxious|excited|calm|neutral 之一","label":"2-4字中文情绪词","visual":"30-60词的英文画面描述，将该情绪转化为具象的视觉意象（场景、色彩、光影、氛围、象征物），适合艺术绘画，不要出现真实人物肖像，不要包含负面情绪词本身"}。只输出JSON，不要其他内容。'
+                        },
+                        {
+                            role: 'user',
+                            content: emotionText
+                        }
+                    ],
+                    temperature: 0.5,
+                    max_tokens: 300
+                })
+            });
+
+            const data = await response.json();
+            if (data.choices && data.choices.length > 0) {
+                let content = data.choices[0].message.content;
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const result = JSON.parse(jsonMatch[0]);
+                    if (result.emotion && result.visual) {
+                        return result;
+                    }
+                }
+            }
+            throw new Error('AI情绪转译返回格式不正确');
+        }
+
         // AI情绪艺术生成器 - 使用Agnes AI生成图片
         async function generateEmotionArt(emotion, style) {
-            // 分析情绪类型
-            const emotionType = analyzeEmotion(emotion);
-            
-            // Agnes AI图像生成API配置
-            const API_KEY = 'sk-CLhREPdd3Pn8f3CVk1dHNynbUR1WKXi4Jvy2RP5kjAZSz0cr';
-            const BASE_URL = 'https://apihub.agnes-ai.com/v1';
-            const API_URL = `${BASE_URL}/images/generations`;
-            
+            // 分析情绪类型（本地关键词，作为降级方案）
+            let emotionType = analyzeEmotion(emotion);
+            // 文生图提示词主体（默认使用原文，AI转译后替换为具象画面描述）
+            let emotionVisual = emotion;
+
             // 根据艺术风格生成更详细的提示词
             const stylePrompts = {
                 abstract: 'abstract art style, emotional expression, dreamlike atmosphere, soft lighting, masterpiece, 8k',
@@ -2445,10 +2484,39 @@
                 surrealism: 'surrealism art, dreamlike scene, imaginative, emotional, surreal painting, high quality',
                 minimalist: 'minimalist art, simple and clean, emotional expression, abstract minimalism, high quality'
             };
-            
+
             const stylePrompt = stylePrompts[style] || stylePrompts.impressionist;
-            const fullPrompt = `${emotion}, ${stylePrompt}, beautiful artwork, professional quality, detailed, 8K resolution`;
-            
+
+            try {
+                // 第一步：GLM 情绪转译——理解隐喻/自嘲背后的真实情绪，并转化为具象画面描述
+                artResult.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full min-h-[256px]">
+                        <div class="relative">
+                            <div class="w-16 h-16 border-4 border-primary/20 rounded-full"></div>
+                            <div class="absolute inset-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                        <p class="text-gray-500 mt-4 text-lg">心迹AI正在理解你的情绪...</p>
+                        <p class="text-gray-400 mt-1 text-sm">正在将感受转译为艺术画面</p>
+                    </div>
+                `;
+
+                const interpreted = await interpretEmotionWithAI(emotion);
+                emotionType = interpreted.emotion;
+                emotionVisual = interpreted.visual;
+                lastArtEmotionLabel = interpreted.label || null;
+                console.log('AI情绪转译结果:', interpreted);
+            } catch (e) {
+                console.warn('AI情绪转译失败，使用本地情绪分析:', e);
+                lastArtEmotionLabel = null;
+            }
+
+            const fullPrompt = `${emotionVisual}, ${stylePrompt}, beautiful artwork, professional quality, detailed, 8K resolution`;
+
+            // Agnes AI图像生成API配置
+            const API_KEY = 'sk-CLhREPdd3Pn8f3CVk1dHNynbUR1WKXi4Jvy2RP5kjAZSz0cr';
+            const BASE_URL = 'https://apihub.agnes-ai.com/v1';
+            const API_URL = `${BASE_URL}/images/generations`;
+
             try {
                 // 更新加载状态
                 artResult.innerHTML = `
@@ -2569,7 +2637,7 @@
                                     <div class="absolute bottom-0 left-0 right-0 p-4">
                                         <div class="flex justify-between items-end">
                                             <div>
-                                                <p class="text-white font-semibold text-lg">${getEmotionLabel(emotionType)}</p>
+                                                <p class="text-white font-semibold text-lg">${lastArtEmotionLabel || getEmotionLabel(emotionType)}</p>
                                                 <p class="text-white/70 text-sm">${styleLabels[style] || style}</p>
                                             </div>
                                             <div class="flex items-center space-x-2">
@@ -2600,7 +2668,7 @@
                     <div class="absolute bottom-0 left-0 right-0 p-4">
                         <div class="flex justify-between items-end">
                             <div>
-                                <p class="text-white font-semibold text-lg">${getEmotionLabel(emotionType)}</p>
+                                <p class="text-white font-semibold text-lg">${lastArtEmotionLabel || getEmotionLabel(emotionType)}</p>
                                 <p class="text-white/70 text-sm">${styleLabels[style] || style}</p>
                             </div>
                             <div class="flex items-center space-x-2">
