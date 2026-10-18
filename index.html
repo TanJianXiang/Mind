@@ -2117,6 +2117,7 @@
             happy:   { label: '开心', icon: '😊', color: '#D97706', style: 'impressionist' },
             sad:     { label: '难过', icon: '💙', color: '#3B82F6', style: 'classical' },
             anxious: { label: '焦虑', icon: '😰', color: '#F97316', style: 'abstract' },
+            angry:   { label: '生气', icon: '😠', color: '#EF4444', style: 'abstract' },
             excited: { label: '兴奋', icon: '🤩', color: '#EC4899', style: 'modern' },
             calm:    { label: '平静', icon: '😌', color: '#10B981', style: 'minimalist' },
             neutral: { label: '平和', icon: '🙂', color: '#6B7280', style: 'impressionist' }
@@ -2835,35 +2836,11 @@
         };
         
         // 分析情绪类型
+        // 统一情绪识别入口：聊天标签、艺术风格推荐、情绪分析共用同一引擎（detectEmotion）
         function analyzeEmotion(emotionText) {
-            const lowerEmotion = emotionText.toLowerCase();
-            
-            if (lowerEmotion.includes('开心') || lowerEmotion.includes('高兴') || lowerEmotion.includes('快乐') || 
-                lowerEmotion.includes('幸福') || lowerEmotion.includes('兴奋') || lowerEmotion.includes('激动')) {
-                return 'happy';
-            }
-            
-            if (lowerEmotion.includes('难过') || lowerEmotion.includes('伤心') || lowerEmotion.includes('悲伤') || 
-                lowerEmotion.includes('失落') || lowerEmotion.includes('孤独') || lowerEmotion.includes('寂寞')) {
-                return 'sad';
-            }
-            
-            if (lowerEmotion.includes('焦虑') || lowerEmotion.includes('压力') || lowerEmotion.includes('紧张') || 
-                lowerEmotion.includes('担心') || lowerEmotion.includes('不安') || lowerEmotion.includes('烦躁')) {
-                return 'anxious';
-            }
-            
-            if (lowerEmotion.includes('兴奋') || lowerEmotion.includes('激动') || lowerEmotion.includes('热情') || 
-                lowerEmotion.includes('澎湃') || lowerEmotion.includes('激昂')) {
-                return 'excited';
-            }
-            
-            if (lowerEmotion.includes('平静') || lowerEmotion.includes('放松') || lowerEmotion.includes('宁静') || 
-                lowerEmotion.includes('平和') || lowerEmotion.includes('安详')) {
-                return 'calm';
-            }
-            
-            return 'neutral';
+            const typeMap = { '开心': 'happy', '平静': 'calm', '焦虑': 'anxious', '生气': 'angry', '难过': 'sad' };
+            const type = detectEmotion(emotionText).type;
+            return typeMap[type] || 'calm';
         }
         
         // Canvas备用艺术生成
@@ -3519,11 +3496,11 @@
         function detectEmotion(message) {
             const lowerMsg = (message || '').toLowerCase();
 
-            const sadnessWords = ['难过', '伤心', '悲伤', '失落', '沮丧', '痛苦', '绝望', '孤独', '寂寞', '委屈', '哭', '眼泪', '郁闷', '小丑'];
-            const happinessWords = ['开心', '高兴', '快乐', '幸福', '兴奋', '激动', '愉快', '喜悦', '满足', '感恩', '棒', '喜欢', '希望', '顺利'];
-            const anxietyWords = ['压力', '焦虑', '紧张', '担心', '害怕', '恐惧', '不安', '烦躁', '累', '疲惫', '困', '失眠', '考试'];
-            const angerWords = ['生气', '愤怒', '讨厌', '气死', '火大', '烦死', '暴躁', '无语'];
-            const calmnessWords = ['平静', '安静', '放松', '舒适', '惬意', '悠闲', '自在', '平和', '淡定'];
+            const sadnessWords = ['难过', '伤心', '悲伤', '失落', '失望', '沮丧', '低落', '灰心', '消沉', '颓废', '痛苦', '绝望', '孤独', '寂寞', '委屈', '哭', '眼泪', '郁闷', '小丑', '丧', 'emo', '想哭', '心碎', '无力', '遗憾', '后悔', '自责', '失败'];
+            const happinessWords = ['开心', '高兴', '快乐', '幸福', '兴奋', '激动', '愉快', '喜悦', '满足', '感恩', '棒', '喜欢', '希望', '顺利', '太好', '耶', '哈哈', '通过', '录取', '获奖', '成功', '期待'];
+            const anxietyWords = ['压力', '焦虑', '紧张', '担心', '害怕', '恐惧', '不安', '烦躁', '累', '疲惫', '困', '失眠', '考试', '挂科', '汇报', '演讲', '面试', 'deadline', 'ddl', '截止', '迷茫', '慌'];
+            const angerWords = ['生气', '愤怒', '讨厌', '气死', '气人', '火大', '烦死', '暴躁', '无语', '离谱', '凭什么', '过分'];
+            const calmnessWords = ['平静', '安静', '放松', '舒适', '惬意', '悠闲', '自在', '平和', '淡定', '还好', '还行', '一般'];
 
             const scores = {
                 '难过': Math.min(sadnessWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
