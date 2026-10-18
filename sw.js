@@ -1,9 +1,14 @@
-const CACHE_NAME = 'xinji-v6';
+const CACHE_NAME = 'xinji-v7';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
   './chart.umd.min.js',
+  './tailwind.js',
+  './font-awesome.min.css',
+  './fonts/fontawesome-webfont.woff2',
+  './fonts/fontawesome-webfont.woff',
+  './fonts/fontawesome-webfont.ttf',
   './icons/icon.svg',
   './icons/ai-avatar.png',
   './icons/user-avatar.png'
