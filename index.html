@@ -768,15 +768,25 @@
                                 <div class="flex justify-center">
                                     <div id="moodTree" class="relative w-64 h-72">
                                         <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-20 bg-gradient-to-t from-amber-700 to-amber-500 rounded"></div>
-                                        <div id="treeCrown" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-48 h-48 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center transition-all duration-1000">
-                                            <span class="text-6xl">🌳</span>
+                                        <div id="treeCrown" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-24 bg-gradient-to-br from-green-300 to-green-400 rounded-full flex items-center justify-center transition-all duration-1000">
+                                            <span class="text-5xl">🌱</span>
                                         </div>
+                                        <div id="treeGlow" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-48 h-48 rounded-full hidden" style="box-shadow: 0 0 42px 10px rgba(253,224,71,.55);"></div>
                                         <div id="treeFruits" class="absolute top-4 left-1/2 transform -translate-x-1/2 w-full h-full pointer-events-none"></div>
                                     </div>
                                 </div>
-                                <p class="text-center mt-4 text-gray-600">
+                                <p id="treeStage" class="text-center mt-2 text-sm text-primary font-medium"></p>
+                                <p class="text-center mt-1 text-gray-600">
                                     已记录 <span id="diaryCount" class="font-bold text-primary">0</span> 天心情
                                 </p>
+                                <div class="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-3 text-xs text-gray-500">
+                                    <span class="flex items-center"><span class="mr-1">🍎</span>开心</span>
+                                    <span class="flex items-center"><span class="mr-1">🍐</span>平静</span>
+                                    <span class="flex items-center"><span class="mr-1">🫐</span>悲伤</span>
+                                    <span class="flex items-center"><span class="mr-1">🌶️</span>生气</span>
+                                    <span class="flex items-center"><span class="mr-1">🍋</span>焦虑</span>
+                                </div>
+                                <p class="text-center mt-2 text-xs text-gray-400">每记一天心情，树上就会结出一颗对应的心情果</p>
                             </div>
                             
                             <div class="bg-white/60 rounded-xl p-6">
@@ -4205,27 +4215,69 @@
             if (anxiousEl) anxiousEl.textContent = stats['焦虑'] + '天';
         }
         
+        // ==================== 心情树 ====================
+        // 规则：每篇日记 = 一颗心情果；心情决定果子种类；树随记录天数成长
+        const MOOD_FRUITS = { '开心': '🍎', '平静': '🍐', '悲伤': '🫐', '生气': '🌶️', '焦虑': '🍋' };
+        const TREE_STAGES = [
+            { min: 1,  emoji: '🌱', size: 'w-32 h-32', grad: 'from-green-300 to-green-500', label: '幼苗成长' },
+            { min: 7,  emoji: '🌳', size: 'w-48 h-48', grad: 'from-green-400 to-green-600', label: '枝繁叶茂' },
+            { min: 30, emoji: '🌳', size: 'w-48 h-48', grad: 'from-green-500 to-emerald-600', label: '硕果累累' }
+        ];
+
+        // 树冠上 30 个固定果位（三圈椭圆分布，顺序固定，果子位置永不跳动）
+        const TREE_SLOTS = (() => {
+            const slots = [];
+            const rings = [
+                { n: 8,  rx: 30, ry: 26, cy: 110, offset: 0 },
+                { n: 10, rx: 55, ry: 45, cy: 96,  offset: 0.4 },
+                { n: 12, rx: 78, ry: 62, cy: 82,  offset: 0.9 }
+            ];
+            rings.forEach(r => {
+                for (let i = 0; i < r.n; i++) {
+                    const a = (i / r.n) * Math.PI * 2 + r.offset;
+                    slots.push({ x: 128 + Math.cos(a) * r.rx, y: r.cy + Math.sin(a) * r.ry });
+                }
+            });
+            return slots;
+        })();
+
+        let lastTreeFruitCount = null;
+
         function updateMoodTree() {
             const fruitsEl = document.getElementById('treeFruits');
+            const crownEl = document.getElementById('treeCrown');
+            const glowEl = document.getElementById('treeGlow');
+            const stageEl = document.getElementById('treeStage');
             if (!fruitsEl) return;
-            
-            const fruitEmojis = ['🍎', '🍊', '🍋', '🍐', '🍑', '🍇', '🍓', '🫐', '🍒', '🥝'];
-            const positiveMoods = ['开心', '平静'];
-            
-            const positiveCount = diaries.filter(d => positiveMoods.includes(d.mood)).length;
-            const fruitCount = Math.min(positiveCount, 12);
-            
-            let fruitsHtml = '';
-            for (let i = 0; i < fruitCount; i++) {
-                const angle = (i / fruitCount) * Math.PI * 2;
-                const radius = 60 + Math.random() * 20;
-                const x = 96 + Math.cos(angle) * radius;
-                const y = 60 + Math.sin(angle) * radius * 0.7;
-                const emoji = fruitEmojis[i % fruitEmojis.length];
-                fruitsHtml += `<span class="absolute text-2xl" style="left: ${x}px; top: ${y}px; animation: bounceIn 0.5s ease ${i * 0.1}s both;">${emoji}</span>`;
+
+            const total = diaries.length;
+
+            // 成长阶段：树冠大小/颜色随记录天数过渡
+            let stage = TREE_STAGES[0];
+            for (const s of TREE_STAGES) if (total >= s.min) stage = s;
+            if (crownEl) {
+                crownEl.className = `absolute top-0 left-1/2 transform -translate-x-1/2 ${stage.size} bg-gradient-to-br ${stage.grad} rounded-full flex items-center justify-center transition-all duration-1000`;
+                crownEl.innerHTML = `<span class="${total >= 7 ? 'text-6xl' : 'text-5xl'}">${stage.emoji}</span>`;
             }
-            
-            fruitsEl.innerHTML = fruitsHtml;
+            if (glowEl) glowEl.classList.toggle('hidden', total < 30);
+            if (stageEl) stageEl.textContent = total > 0 ? `当前阶段：${stage.label}` : '记下第一篇日记，让种子发芽吧';
+
+            // 心情果：旧日记先入树，最新日记最后挂果，只对新果子播放入场动画
+            const animateFrom = lastTreeFruitCount === null ? 0 : lastTreeFruitCount;
+            const ordered = [...diaries].reverse();
+            const fruitsHtml = [];
+            ordered.forEach((d, i) => {
+                if (i >= TREE_SLOTS.length) return;
+                const slot = TREE_SLOTS[i];
+                const emoji = MOOD_FRUITS[d.mood] || '🍎';
+                const date = new Date(d.date);
+                const tip = `${date.getMonth() + 1}月${date.getDate()}日 · ${d.mood}`;
+                const isNew = i >= animateFrom;
+                const anim = isNew ? `animation: bounceIn 0.5s ease ${(i - animateFrom) * 0.12}s both;` : '';
+                fruitsHtml.push(`<span class="absolute text-2xl pointer-events-auto" title="${tip}" style="left: ${slot.x - 12}px; top: ${slot.y - 12}px; ${anim}">${emoji}</span>`);
+            });
+            fruitsEl.innerHTML = fruitsHtml.join('');
+            lastTreeFruitCount = Math.min(total, TREE_SLOTS.length);
         }
         
         function showDiaryEntry() {
