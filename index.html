@@ -157,6 +157,10 @@
                 0% { transform: scale(0); opacity: 0; }
                 100% { transform: scale(1); opacity: 1; }
             }
+            @keyframes toastIn {
+                0% { transform: translateY(-16px) scale(0.9); opacity: 0; }
+                100% { transform: translateY(0) scale(1); opacity: 1; }
+            }
             .spin-slow {
                 animation: spin 20s linear infinite;
             }
@@ -1526,6 +1530,9 @@
         </main>
     </div>
 
+    <!-- Toast 轻提示容器 -->
+    <div id="toastContainer" class="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none"></div>
+
     <!-- 登录模态框 -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-xl p-8 max-w-md w-full">
@@ -2502,7 +2509,7 @@
                     generateEmotionArt(emotionInput, artStyle);
                 }, 2000);
             } else {
-                alert('请输入情绪描述');
+                showToast('请输入情绪描述', 'warning');
             }
         }
         
@@ -3248,7 +3255,7 @@
                 link.click();
                 document.body.removeChild(link);
             } else {
-                alert('请先生成艺术作品');
+                showToast('请先生成艺术作品', 'warning');
             }
         }
 
@@ -3265,13 +3272,13 @@
                 } else {
                     // 复制链接到剪贴板
                     navigator.clipboard.writeText(imgElement.src).then(() => {
-                        alert('链接已复制到剪贴板！');
+                        showToast('链接已复制到剪贴板！', 'success');
                     }).catch(() => {
-                        alert('分享链接：' + imgElement.src);
+                        showToast('分享链接：' + imgElement.src, 'info');
                     });
                 }
             } else {
-                alert('请先生成艺术作品');
+                showToast('请先生成艺术作品', 'warning');
             }
         }
 
@@ -3285,7 +3292,7 @@
                 if (emotionInput) {
                     generateArt();
                 } else {
-                    alert('请先输入情绪描述');
+                    showToast('请先输入情绪描述', 'warning');
                 }
             }
         }
@@ -3713,11 +3720,11 @@
                         const accounts = getAccounts();
                         const account = accounts[email];
                         if (!account) {
-                            alert('该邮箱尚未注册，请先注册账号');
+                            showToast('该邮箱尚未注册，请先注册账号', 'error');
                             return;
                         }
                         if (account.password !== encodePwd(password)) {
-                            alert('密码错误，请重试');
+                            showToast('密码错误，请重试', 'error');
                             return;
                         }
                         localStorage.setItem('user', JSON.stringify({
@@ -3727,9 +3734,9 @@
                         }));
                         loginModal.classList.add('hidden');
                         updateUserStatus();
-                        alert('欢迎回来，' + account.name + '！');
+                        showToast('欢迎回来，' + account.name + '！', 'success');
                     } else {
-                        alert('请填写所有字段');
+                        showToast('请填写所有字段', 'warning');
                     }
                 });
             }
@@ -3745,12 +3752,12 @@
 
                     if (name && email && password && confirmPassword) {
                         if (password !== confirmPassword) {
-                            alert('两次输入的密码不一致');
+                            showToast('两次输入的密码不一致', 'error');
                             return;
                         }
                         const accounts = getAccounts();
                         if (accounts[email]) {
-                            alert('该邮箱已注册，请直接登录');
+                            showToast('该邮箱已注册，请直接登录', 'warning');
                             return;
                         }
                         const userId = 'u_' + hashString(email);
@@ -3759,9 +3766,9 @@
                         localStorage.setItem('user', JSON.stringify({ id: userId, name, email }));
                         registerModal.classList.add('hidden');
                         updateUserStatus();
-                        alert('注册成功，欢迎来到心迹！');
+                        showToast('注册成功，欢迎来到心迹！', 'success');
                     } else {
-                        alert('请填写所有字段');
+                        showToast('请填写所有字段', 'warning');
                     }
                 });
             }
@@ -3773,7 +3780,7 @@
                     localStorage.removeItem('user');
                     userMenu.classList.add('hidden');
                     updateUserStatus();
-                    alert('已退出登录');
+                    showToast('已退出登录', 'info');
                 });
             }
 
@@ -3812,8 +3819,8 @@
                         localStorage.clear();
                         if (theme) localStorage.setItem('xinji-theme', theme);
                         updateUserStatus();
-                        alert('本地数据已清除');
-                        location.reload();
+                        showToast('本地数据已清除', 'success');
+                        setTimeout(() => location.reload(), 900);
                     }
                 });
             }
@@ -3905,7 +3912,7 @@
                 user.birthday = birthday;
                 
                 localStorage.setItem('user', JSON.stringify(user));
-                alert('个人信息已保存！');
+                showToast('个人信息已保存！', 'success');
             }
             
             // 初始化加载用户信息
@@ -4114,11 +4121,11 @@
         function saveDiary() {
             const content = document.getElementById('diaryContent').value.trim();
             if (!selectedMood) {
-                alert('请选择今天的心情！');
+                showToast('请选择今天的心情！', 'warning');
                 return;
             }
             if (!content) {
-                alert('写点什么吧~');
+                showToast('写点什么吧~', 'warning');
                 return;
             }
             
@@ -4149,7 +4156,7 @@
                 el.classList.remove('ring-2', 'ring-primary');
             });
             
-            alert('日记保存成功！');
+            showToast('日记保存成功！', 'success');
         }
         
         function renderDiaryList() {
@@ -4215,6 +4222,31 @@
             if (anxiousEl) anxiousEl.textContent = stats['焦虑'] + '天';
         }
         
+        // ==================== Toast 轻提示 ====================
+        const TOAST_ICONS = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-circle', info: 'fa-info-circle' };
+        const TOAST_COLORS = {
+            success: 'bg-emerald-500/95',
+            error: 'bg-red-500/95',
+            warning: 'bg-amber-500/95',
+            info: 'bg-indigo-500/95'
+        };
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center space-x-2 px-5 py-3 rounded-full text-white text-sm font-medium shadow-lg ${TOAST_COLORS[type] || TOAST_COLORS.info}`;
+            toast.style.cssText = 'animation: toastIn 0.3s ease both;';
+            toast.innerHTML = `<i class="fa ${TOAST_ICONS[type] || TOAST_ICONS.info}"></i><span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.transition = 'opacity .35s ease, transform .35s ease';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-8px)';
+                setTimeout(() => toast.remove(), 380);
+            }, 2600);
+        }
+
         // ==================== 心情树 ====================
         // 规则：每篇日记 = 一颗心情果；心情决定果子种类；树随记录天数成长
         const MOOD_FRUITS = { '开心': '🍎', '平静': '🍐', '悲伤': '🫐', '生气': '🌶️', '焦虑': '🍋' };
