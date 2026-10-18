@@ -783,15 +783,8 @@
                                 <p class="text-center mt-1 text-gray-600">
                                     已记录 <span id="diaryCount" class="font-bold text-primary">0</span> 天心情
                                 </p>
-                                <div class="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-3 text-xs text-gray-500">
-                                    <span class="flex items-center"><span class="mr-1">🍎</span>开心</span>
-                                    <span class="flex items-center"><span class="mr-1">🍑</span>兴奋</span>
-                                    <span class="flex items-center"><span class="mr-1">🍐</span>平静</span>
-                                    <span class="flex items-center"><span class="mr-1">🫐</span>悲伤</span>
-                                    <span class="flex items-center"><span class="mr-1">🌶️</span>生气</span>
-                                    <span class="flex items-center"><span class="mr-1">🍋</span>焦虑</span>
-                                    <span class="flex items-center"><span class="mr-1">🥝</span>疲惫</span>
-                                    <span class="flex items-center"><span class="mr-1">🍇</span>委屈</span>
+                                <div id="treeLegend" class="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-3 text-xs text-gray-500">
+                                    <!-- 图例由 EMOTION_CONFIG 动态生成 -->
                                 </div>
                                 <p class="text-center mt-2 text-xs text-gray-400">每记一天心情，树上就会结出一颗对应的心情果</p>
                             </div>
@@ -810,39 +803,8 @@
                         <div>
                             <div class="bg-white/60 rounded-xl p-6 mb-6">
                                 <h3 class="text-xl font-bold mb-4 text-gray-800">😊 今日心情</h3>
-                                <div class="grid grid-cols-4 gap-2 mb-4">
-                                    <div class="text-center cursor-pointer p-2 rounded-lg hover:bg-pink-100 transition-colors mood-emoji" data-mood="开心" onclick="selectMood('开心', this)">
-                                        <div class="text-3xl">😄</div>
-                                        <div class="text-xs mt-1">开心</div>
-                                    </div>
-                                    <div class="text-center cursor-pointer p-2 rounded-lg hover:bg-pink-100 transition-colors mood-emoji" data-mood="兴奋" onclick="selectMood('兴奋', this)">
-                                        <div class="text-3xl">🤩</div>
-                                        <div class="text-xs mt-1">兴奋</div>
-                                    </div>
-                                    <div class="text-center cursor-pointer p-2 rounded-lg hover:bg-yellow-100 transition-colors mood-emoji" data-mood="平静" onclick="selectMood('平静', this)">
-                                        <div class="text-3xl">😌</div>
-                                        <div class="text-xs mt-1">平静</div>
-                                    </div>
-                                    <div class="text-center cursor-pointer p-2 rounded-lg hover:bg-blue-100 transition-colors mood-emoji" data-mood="悲伤" onclick="selectMood('悲伤', this)">
-                                        <div class="text-3xl">😢</div>
-                                        <div class="text-xs mt-1">悲伤</div>
-                                    </div>
-                                    <div class="text-center cursor-pointer p-2 rounded-lg hover:bg-red-100 transition-colors mood-emoji" data-mood="生气" onclick="selectMood('生气', this)">
-                                        <div class="text-3xl">😠</div>
-                                        <div class="text-xs mt-1">生气</div>
-                                    </div>
-                                    <div class="text-center cursor-pointer p-2 rounded-lg hover:bg-purple-100 transition-colors mood-emoji" data-mood="焦虑" onclick="selectMood('焦虑', this)">
-                                        <div class="text-3xl">😰</div>
-                                        <div class="text-xs mt-1">焦虑</div>
-                                    </div>
-                                    <div class="text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors mood-emoji" data-mood="疲惫" onclick="selectMood('疲惫', this)">
-                                        <div class="text-3xl">😮‍💨</div>
-                                        <div class="text-xs mt-1">疲惫</div>
-                                    </div>
-                                    <div class="text-center cursor-pointer p-2 rounded-lg hover:bg-cyan-100 transition-colors mood-emoji" data-mood="委屈" onclick="selectMood('委屈', this)">
-                                        <div class="text-3xl">🥺</div>
-                                        <div class="text-xs mt-1">委屈</div>
-                                    </div>
+                                <div id="moodSelector" class="grid grid-cols-4 gap-2 mb-4">
+                                    <!-- 心情按钮由 EMOTION_CONFIG 动态生成，新增情绪自动出现 -->
                                 </div>
                                 <textarea id="diaryContent" class="w-full p-4 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/30" rows="6" placeholder="今天发生了什么？记录下你的心情吧..."></textarea>
                                 <button class="w-full mt-4 py-3 bg-gradient-primary text-white rounded-xl hover:shadow-lg transition-all hover:-translate-y-1" onclick="saveDiary()">
@@ -1281,7 +1243,7 @@
                                         <h4 class="font-semibold text-amber-900 mb-2">分析说明</h4>
                                         <p class="text-amber-800 text-sm leading-relaxed">
                                             分析数据来自两个渠道：<strong>心情日记</strong>（你主动记录的情绪，权重更高）与 <strong>AI 对话</strong>（关键词识别 + GLM 语义复核双重判定）。
-                                            情绪指数含义：兴奋 92 · 开心 88 · 平静 68 · 疲惫 45 · 焦虑 42 · 生气 38 · 委屈 36 · 难过 32；趋势按日期统计，当天同时有日记和对话时按 6:4 融合。
+                                            <span id="scoreLegend"></span>趋势按日期统计，当天同时有日记和对话时按 6:4 融合。
                                             分析结果仅供参考，如有需要请咨询专业心理医生。
                                         </p>
                                     </div>
@@ -2081,6 +2043,67 @@
         const ZHIPU_API_KEY = 'c4be3413f4ed4db5a0fc74b57f23210b.TIc3XdO0hm7ZRIN1';
         const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 
+        // ==================== 情绪体系单一数据源 ====================
+        // 新增/调整情绪只需修改此数组，心情日记按钮、心情树果子与图例、聊天情绪标签、
+        // 情绪分析（分布/趋势/指数）、AI 判定类别、艺术风格推荐全部自动同步
+        const EMOTION_CONFIG = [
+            { key: '开心', tag: 'happy',   score: 88, color: '#10B981', emoji: '😊', fruit: '🍎', style: 'impressionist',
+              words: ['开心', '高兴', '快乐', '幸福', '愉快', '喜悦', '满足', '感恩', '喜欢', '希望', '顺利', '太好', '耶', '哈哈', '通过', '录取', '获奖', '成功'] },
+            { key: '兴奋', tag: 'excited', score: 92, color: '#EC4899', emoji: '🤩', fruit: '🍑', style: 'modern',
+              words: ['兴奋', '激动', '期待', '热血', '澎湃', '燃', '迫不及待', '太棒', '亢奋'] },
+            { key: '平静', tag: 'calm',    score: 68, color: '#6366F1', emoji: '😌', fruit: '🍐', style: 'minimalist',
+              words: ['平静', '安静', '放松', '舒适', '惬意', '悠闲', '自在', '平和', '淡定', '还好', '还行', '一般'] },
+            { key: '焦虑', tag: 'anxious', score: 42, color: '#F59E0B', emoji: '😰', fruit: '🍋', style: 'abstract',
+              words: ['压力', '焦虑', '紧张', '担心', '害怕', '恐惧', '不安', '烦躁', '烦', '心烦', '失眠', '考试', '挂科', '汇报', '演讲', '面试', 'deadline', 'ddl', '截止', '迷茫', '慌', '乱'] },
+            { key: '生气', tag: 'angry',   score: 38, color: '#EF4444', emoji: '😠', fruit: '🌶️', style: 'abstract',
+              words: ['生气', '愤怒', '讨厌', '气死', '气人', '火大', '烦死', '暴躁', '无语', '离谱', '凭什么', '过分'] },
+            { key: '难过', tag: 'sad',     score: 32, color: '#3B82F6', emoji: '😢', fruit: '🫐', style: 'classical', diaryMood: '悲伤',
+              words: ['难过', '伤心', '悲伤', '失落', '失望', '沮丧', '低落', '灰心', '消沉', '颓废', '痛苦', '绝望', '孤独', '寂寞', '哭', '眼泪', '郁闷', '小丑', '丧', 'emo', '想哭', '心碎', '遗憾', '后悔', '自责', '失败', '网抑云'] },
+            { key: '疲惫', tag: 'tired',   score: 45, color: '#64748B', emoji: '😮‍💨', fruit: '🥝', style: 'minimalist',
+              words: ['累', '疲惫', '心累', '好累', '精疲力尽', '累瘫', '没力气', '困', '崩溃', '破防', '麻了', '撑不住', '扛不住', '虚脱'] },
+            { key: '委屈', tag: 'wronged', score: 36, color: '#06B6D4', emoji: '🥺', fruit: '🍇', style: 'surrealism',
+              words: ['委屈', '冤枉', '被误解', '背锅', '不公', '不公平', '欺负', '受气', '憋屈'] }
+        ];
+        // 以下映射全部由 EMOTION_CONFIG 派生，请勿单独维护
+        const EMOTION_META = Object.fromEntries(EMOTION_CONFIG.map(e => [e.key, { score: e.score, color: e.color, emoji: e.emoji }]));
+        const emotionMeta = Object.fromEntries(EMOTION_CONFIG.map(e => [e.tag, { label: e.key, icon: e.emoji, color: e.color, style: e.style }]));
+        emotionMeta.neutral = { label: '平和', icon: '🙂', color: '#6B7280', style: 'impressionist' }; // 兜底
+        const EMOTION_TO_TAG = Object.fromEntries(EMOTION_CONFIG.map(e => [e.key, e.tag]));
+        const MOOD_FRUITS = Object.fromEntries(EMOTION_CONFIG.map(e => [e.diaryMood || e.key, e.fruit]));
+        const MOOD_TO_EMOTION = Object.fromEntries(EMOTION_CONFIG.map(e => [e.diaryMood || e.key, e.key]));
+        const EMOTION_KEYS = EMOTION_CONFIG.map(e => e.key);
+
+        // 心情日记的心情按钮：由配置动态生成
+        function renderMoodSelector() {
+            const container = document.getElementById('moodSelector');
+            if (!container) return;
+            container.innerHTML = EMOTION_CONFIG.map(e => {
+                const mood = e.diaryMood || e.key;
+                return `<div class="text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors mood-emoji" data-mood="${mood}" onclick="selectMood('${mood}', this)">
+                    <div class="text-3xl">${e.emoji}</div>
+                    <div class="text-xs mt-1">${mood}</div>
+                </div>`;
+            }).join('');
+        }
+
+        // 心情树图例：由配置动态生成
+        function renderTreeLegend() {
+            const el = document.getElementById('treeLegend');
+            if (!el) return;
+            el.innerHTML = EMOTION_CONFIG.map(e =>
+                `<span class="flex items-center"><span class="mr-1">${e.fruit}</span>${e.diaryMood || e.key}</span>`
+            ).join('');
+        }
+        renderMoodSelector();
+        renderTreeLegend();
+
+        // 分析说明的情绪指数含义：由配置动态生成
+        (function renderScoreLegend() {
+            const sl = document.getElementById('scoreLegend');
+            if (!sl) return;
+            sl.textContent = '情绪指数含义：' + [...EMOTION_CONFIG].sort((a, b) => b.score - a.score).map(e => `${e.key} ${e.score}`).join(' · ') + '；';
+        })();
+
         // AI回复模板（备用）
         const AI_RESPONSES = [
             "我理解你的感受，谢谢你的分享。我会一直在这里陪伴你。",
@@ -2127,18 +2150,7 @@
             }
         }
 
-        // 情绪元数据：标签文案与配色（聊天情绪标签 & 艺术风格推荐共用）
-        const emotionMeta = {
-            happy:   { label: '开心', icon: '😊', color: '#D97706', style: 'impressionist' },
-            sad:     { label: '难过', icon: '💙', color: '#3B82F6', style: 'classical' },
-            anxious: { label: '焦虑', icon: '😰', color: '#F97316', style: 'abstract' },
-            angry:   { label: '生气', icon: '😠', color: '#EF4444', style: 'abstract' },
-            tired:   { label: '疲惫', icon: '😮‍💨', color: '#64748B', style: 'minimalist' },
-            wronged: { label: '委屈', icon: '🥺', color: '#06B6D4', style: 'surrealism' },
-            excited: { label: '兴奋', icon: '🤩', color: '#EC4899', style: 'modern' },
-            calm:    { label: '平静', icon: '😌', color: '#10B981', style: 'minimalist' },
-            neutral: { label: '平和', icon: '🙂', color: '#6B7280', style: 'impressionist' }
-        };
+        // （emotionMeta 已由 EMOTION_CONFIG 派生，见文件顶部情绪体系单一数据源）
 
         // 最近一条用户消息（情绪艺术联动数据源）
         let lastUserMessage = '';
@@ -2353,8 +2365,7 @@
             return messages.length - 1;
         }
 
-        // 中文情绪 → 聊天标签 key 映射
-        const EMOTION_TO_TAG = { '开心': 'happy', '兴奋': 'excited', '平静': 'calm', '焦虑': 'anxious', '生气': 'angry', '难过': 'sad', '疲惫': 'tired', '委屈': 'wronged' };
+        // （EMOTION_TO_TAG 已由 EMOTION_CONFIG 派生，见文件顶部情绪体系单一数据源）
 
         // AI 二级判定：本地关键词未命中时，用 GLM 语义复核，更新标签并持久化（情绪分析随之同步）
         async function refineEmotionWithAI(content, msgIndex) {
@@ -2370,7 +2381,7 @@
                         messages: [
                             {
                                 role: 'system',
-                                content: '你是情绪识别专家。判断用户这句话的主要情绪，只能从以下8类中选一个：开心、兴奋、平静、焦虑、生气、难过、疲惫、委屈。只输出JSON：{"emotion":"类别名"}'
+                                content: `你是情绪识别专家。判断用户这句话的主要情绪，只能从以下${EMOTION_CONFIG.length}类中选一个：${EMOTION_KEYS.join('、')}。只输出JSON：{"emotion":"类别名"}`
                             },
                             { role: 'user', content: content }
                         ],
@@ -3443,19 +3454,7 @@
         }
 
         // ==================== 情绪分析（日记 + 对话双数据源融合） ====================
-        // 统一情绪模型：指数越高代表情绪状态越积极
-        const EMOTION_META = {
-            '开心': { score: 88, color: '#10B981', emoji: '😊' },
-            '兴奋': { score: 92, color: '#EC4899', emoji: '🤩' },
-            '平静': { score: 68, color: '#6366F1', emoji: '😌' },
-            '焦虑': { score: 42, color: '#F59E0B', emoji: '😰' },
-            '生气': { score: 38, color: '#EF4444', emoji: '😠' },
-            '难过': { score: 32, color: '#3B82F6', emoji: '😢' },
-            '疲惫': { score: 45, color: '#64748B', emoji: '😮‍💨' },
-            '委屈': { score: 36, color: '#06B6D4', emoji: '🥺' }
-        };
-        // 心情日记情绪 → 分析情绪映射
-        const MOOD_TO_EMOTION = { '开心': '开心', '兴奋': '兴奋', '平静': '平静', '悲伤': '难过', '生气': '生气', '焦虑': '焦虑', '疲惫': '疲惫', '委屈': '委屈' };
+        // （EMOTION_META / MOOD_TO_EMOTION 已由 EMOTION_CONFIG 派生，见文件顶部）
 
         // 融合心情日记与 AI 对话，生成可追溯的情绪分析
         function buildEmotionAnalysis() {
@@ -3494,8 +3493,8 @@
                 };
             }
 
-            // 情绪分布（日记权重 ×2）
-            const weights = { '开心': 0, '兴奋': 0, '平静': 0, '焦虑': 0, '生气': 0, '难过': 0, '疲惫': 0, '委屈': 0 };
+            // 情绪分布（日记权重 ×2；类别由 EMOTION_CONFIG 动态生成）
+            const weights = Object.fromEntries(EMOTION_CONFIG.map(e => [e.key, 0]));
             samples.forEach(s => { if (weights[s.emotion] !== undefined) weights[s.emotion] += (s.source === 'diary' ? 2 : 1); });
             const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
 
@@ -3585,29 +3584,15 @@
             }).join('');
         }
 
-        // 情绪检测函数（8 类；无任何关键词命中时返回 needsAI 标记，由 GLM 语义兜底）
+        // 情绪检测函数（完全由 EMOTION_CONFIG 驱动；无命中时返回 needsAI 标记，由 GLM 语义兜底）
         function detectEmotion(message) {
             const lowerMsg = (message || '').toLowerCase();
 
-            const sadnessWords = ['难过', '伤心', '悲伤', '失落', '失望', '沮丧', '低落', '灰心', '消沉', '颓废', '痛苦', '绝望', '孤独', '寂寞', '哭', '眼泪', '郁闷', '小丑', '丧', 'emo', '想哭', '心碎', '遗憾', '后悔', '自责', '失败', '网抑云'];
-            const happinessWords = ['开心', '高兴', '快乐', '幸福', '愉快', '喜悦', '满足', '感恩', '喜欢', '希望', '顺利', '太好', '耶', '哈哈', '通过', '录取', '获奖', '成功'];
-            const excitedWords = ['兴奋', '激动', '期待', '热血', '澎湃', '燃', '迫不及待', '太棒', '亢奋'];
-            const anxietyWords = ['压力', '焦虑', '紧张', '担心', '害怕', '恐惧', '不安', '烦躁', '烦', '心烦', '失眠', '考试', '挂科', '汇报', '演讲', '面试', 'deadline', 'ddl', '截止', '迷茫', '慌', '乱'];
-            const angerWords = ['生气', '愤怒', '讨厌', '气死', '气人', '火大', '烦死', '暴躁', '无语', '离谱', '凭什么', '过分'];
-            const tiredWords = ['累', '疲惫', '心累', '好累', '精疲力尽', '累瘫', '没力气', '困', '崩溃', '破防', '麻了', '撑不住', '扛不住', '虚脱'];
-            const wrongedWords = ['委屈', '冤枉', '被误解', '背锅', '不公', '不公平', '欺负', '受气', '憋屈'];
-            const calmnessWords = ['平静', '安静', '放松', '舒适', '惬意', '悠闲', '自在', '平和', '淡定', '还好', '还行', '一般'];
-
-            const scores = {
-                '难过': Math.min(sadnessWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
-                '开心': Math.min(happinessWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
-                '兴奋': Math.min(excitedWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
-                '焦虑': Math.min(anxietyWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
-                '生气': Math.min(angerWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
-                '疲惫': Math.min(tiredWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
-                '委屈': Math.min(wrongedWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
-                '平静': Math.min(calmnessWords.filter(w => lowerMsg.includes(w)).length * 20, 100)
-            };
+            // 各类情绪命中计数（词库来自 EMOTION_CONFIG）
+            const scores = {};
+            EMOTION_CONFIG.forEach(e => {
+                scores[e.key] = Math.min((e.words || []).filter(w => lowerMsg.includes(w)).length * 20, 100);
+            });
 
             let maxEmotion = '平静';
             let maxScore = 0;
@@ -4403,7 +4388,6 @@
 
         // ==================== 心情树 ====================
         // 规则：每篇日记 = 一颗心情果；心情决定果子种类；树随记录天数成长
-        const MOOD_FRUITS = { '开心': '🍎', '兴奋': '🍑', '平静': '🍐', '悲伤': '🫐', '生气': '🌶️', '焦虑': '🍋', '疲惫': '🥝', '委屈': '🍇' };
         const TREE_STAGES = [
             { min: 0,  emoji: '🌱', size: 'w-36 h-36', esize: 'text-4xl', grad: 'from-green-300 to-green-400', label: '等待发芽' },
             { min: 1,  emoji: '🌳', size: 'w-44 h-44', esize: 'text-5xl', grad: 'from-green-300 to-green-500', label: '茁壮成长' },
