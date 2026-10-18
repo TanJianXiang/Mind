@@ -1108,7 +1108,7 @@
                     <div class="flex items-center justify-between mb-8">
                         <div>
                             <h2 class="text-3xl font-bold text-neutral">情绪分析</h2>
-                            <p class="text-gray-600 mt-2">基于你的聊天记录分析情绪状态</p>
+                            <p class="text-gray-600 mt-2">基于你的心情日记与 AI 对话的真实数据</p>
                         </div>
                         <div class="flex items-center space-x-2">
                             <button onclick="refreshAnalysis()" class="px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 transition-colors text-sm font-medium">
@@ -1123,7 +1123,7 @@
                                 <div class="w-10 h-10 rounded-xl bg-white/60 flex items-center justify-center">
                                     <i class="fa fa-comment text-primary text-xl"></i>
                                 </div>
-                                <span class="text-gray-600 text-sm">对话次数</span>
+                                <span class="text-gray-600 text-sm">情绪样本</span>
                             </div>
                             <p id="totalMessages" class="text-3xl font-bold text-neutral">0</p>
                         </div>
@@ -1167,8 +1167,12 @@
                                     <p class="text-sm text-gray-500">最近的情绪变化</p>
                                 </div>
                             </div>
-                            <div class="h-64">
+                            <div class="h-64 relative">
                                 <canvas id="emotionChart"></canvas>
+                                <div id="trendEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                                    <i class="fa fa-line-chart text-3xl mb-2"></i>
+                                    <p class="text-sm">记录心情日记或与 AI 聊天后生成</p>
+                                </div>
                             </div>
                         </div>
                         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -1181,12 +1185,34 @@
                                     <p class="text-sm text-gray-500">各类情绪占比</p>
                                 </div>
                             </div>
-                            <div class="h-64">
+                            <div class="h-64 relative">
                                 <canvas id="emotionPieChart"></canvas>
+                                <div id="pieEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                                    <i class="fa fa-pie-chart text-3xl mb-2"></i>
+                                    <p class="text-sm">暂无情绪数据</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-secondary/20 to-secondary/5 flex items-center justify-center">
+                                    <i class="fa fa-book text-secondary"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-neutral">近期心情记录</h3>
+                                    <p class="text-sm text-gray-500">分析依据 · 来自你的心情日记</p>
+                                </div>
+                            </div>
+                            <button onclick="switchWindow('diary')" class="text-sm text-primary hover:underline flex items-center">
+                                去写日记 <i class="fa fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                        <div id="diaryEvidence" class="space-y-3"></div>
+                    </div>
+
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                         <div class="flex items-center space-x-3 mb-6">
                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-success/20 to-success/5 flex items-center justify-center">
@@ -1194,7 +1220,7 @@
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-neutral">情绪分析报告</h3>
-                                <p class="text-sm text-gray-500">基于对话记录的智能分析</p>
+                                <p class="text-sm text-gray-500">基于心情日记与对话记录的智能分析</p>
                             </div>
                         </div>
                         <div class="space-y-6">
@@ -1239,7 +1265,8 @@
                                     <div>
                                         <h4 class="font-semibold text-amber-900 mb-2">分析说明</h4>
                                         <p class="text-amber-800 text-sm leading-relaxed">
-                                            情绪分析基于你与心迹AI的对话内容，通过关键词识别和语义分析得出。
+                                            分析数据来自两个渠道：<strong>心情日记</strong>（你主动记录的情绪，权重更高）与 <strong>AI 对话</strong>（基于对话内容的情绪识别）。
+                                            情绪指数含义：开心 88 · 平静 68 · 焦虑 42 · 生气 38 · 难过 32；趋势按日期统计，当天同时有日记和对话时按 6:4 融合。
                                             分析结果仅供参考，如有需要请咨询专业心理医生。
                                         </p>
                                     </div>
@@ -3299,49 +3326,20 @@
 
         // 情绪分析图表
         function initCharts() {
-            // 从本地存储获取聊天数据并进行情绪分析
-            const userId = getCurrentUserId();
-            const messages = JSON.parse(localStorage.getItem(`chat_messages_${userId}`)) || [];
-            
-            // 使用AI进行情绪分析
-            analyzeEmotionsWithAI(messages);
+            // 本地融合计算：图表数据 100% 来自真实记录（心情日记 + AI 对话），立即可靠
+            const analysis = buildEmotionAnalysis();
+            renderCharts(analysis, analysis.stats.total);
+            renderDiaryEvidence();
+            // AI 仅用于生成更温暖的报告文案，失败时保留本地报告
+            if (analysis.stats.total > 0) {
+                enhanceReportWithAI(analysis);
+            }
         }
 
-        // 使用AI进行情绪分析
-        async function analyzeEmotionsWithAI(messages) {
-            if (!messages || messages.length === 0) {
-                renderCharts({
-                    trend: [65],
-                    distribution: {'平静': 100},
-                    report: {
-                        overall_status: '暂无数据',
-                        main_emotion: '-',
-                        fluctuation: '-',
-                        suggestion: '开始和心迹AI聊天，我会为你生成个性化的情绪分析和建议。'
-                    }
-                }, 0);
-                return;
-            }
-
-            // 提取用户消息
-            const userMessages = messages.filter(m => m.isUser).map(m => m.content);
-            
-            if (userMessages.length === 0) {
-                renderCharts({
-                    trend: [65],
-                    distribution: {'平静': 100},
-                    report: {
-                        overall_status: '暂无数据',
-                        main_emotion: '-',
-                        fluctuation: '-',
-                        suggestion: '开始和心迹AI聊天，我会为你生成个性化的情绪分析和建议。'
-                    }
-                }, 0);
-                return;
-            }
-
+        // GLM 仅负责把统计数据写成温暖的报告文案；图表数据不依赖网络
+        async function enhanceReportWithAI(analysis) {
             try {
-                // 调用智谱AI进行情绪分析
+                const { trend, distribution, stats, report } = analysis;
                 const response = await fetch(ZHIPU_API_URL, {
                     method: 'POST',
                     headers: {
@@ -3353,160 +3351,204 @@
                         messages: [
                             {
                                 role: 'system',
-                                content: '你是一个情绪分析专家。请分析用户的消息，识别情绪类型（平静、开心、焦虑、难过），并给出分析报告。输出格式为JSON：{"trend": [情绪分数数组，范围0-100，最近7条消息], "distribution": {"情绪类型": 百分比}, "report": {"overall_status": "稳定/波动", "main_emotion": "主要情绪", "fluctuation": "低/高", "suggestion": "建议"}}'
+                                content: '你是温暖的心理健康陪伴助手。根据用户真实的情绪统计数据，输出 JSON：{"overall_status": "4字以内的状态概括", "suggestion": "80字以内、具体温暖的建议"}。只输出 JSON。'
                             },
                             {
                                 role: 'user',
-                                content: `分析以下用户消息的情绪：${userMessages.join('；')}`
+                                content: `用户最近情绪指数趋势（按日期）：[${trend.join(', ')}]；情绪分布：${JSON.stringify(distribution)}（日记${stats.diaryCount}篇、对话${stats.chatCount}条，日记权重更高）；主要情绪：${report.main_emotion}。`
                             }
                         ],
-                        temperature: 0.3,
-                        max_tokens: 1000
+                        temperature: 0.7,
+                        max_tokens: 300
                     })
                 });
-
                 const data = await response.json();
-                
-                if (data.choices && data.choices.length > 0) {
-                    try {
-                        let content = data.choices[0].message.content;
-                        console.log('AI返回的原始内容:', content);
-                        
-                        const jsonMatch = content.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            content = jsonMatch[0];
-                        }
-                        
-                        const result = JSON.parse(content);
-                        renderCharts(result, userMessages.length);
-                        return;
-                    } catch (e) {
-                        console.error('AI返回的JSON解析失败:', e);
-                    }
+                const content = data.choices && data.choices[0] && data.choices[0].message.content;
+                const jsonMatch = content && content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const result = JSON.parse(jsonMatch[0]);
+                    const overallStatusEl = document.getElementById('overallStatus');
+                    const suggestionEl = document.getElementById('suggestion');
+                    if (result.overall_status && overallStatusEl) overallStatusEl.textContent = result.overall_status;
+                    if (result.suggestion && suggestionEl) suggestionEl.textContent = result.suggestion;
                 }
-            } catch (error) {
-                console.error('情绪分析API调用失败:', error);
+            } catch (e) {
+                console.warn('AI报告生成失败，保留本地报告:', e);
             }
-
-            // 如果API调用失败，使用本地分析
-            const localUserMessages = messages.filter(m => m.isUser).map(m => m.content);
-            const result = analyzeEmotions(messages);
-            renderCharts(result, localUserMessages.length);
         }
 
-        // 情绪分析函数
-        function analyzeEmotions(messages) {
-            if (!messages || messages.length === 0) {
+        // ==================== 情绪分析（日记 + 对话双数据源融合） ====================
+        // 统一情绪模型：指数越高代表情绪状态越积极
+        const EMOTION_META = {
+            '开心': { score: 88, color: '#10B981', emoji: '😊' },
+            '平静': { score: 68, color: '#6366F1', emoji: '😌' },
+            '焦虑': { score: 42, color: '#F59E0B', emoji: '😰' },
+            '生气': { score: 38, color: '#EF4444', emoji: '😠' },
+            '难过': { score: 32, color: '#3B82F6', emoji: '😢' }
+        };
+        // 心情日记情绪 → 分析情绪映射
+        const MOOD_TO_EMOTION = { '开心': '开心', '平静': '平静', '悲伤': '难过', '生气': '生气', '焦虑': '焦虑' };
+
+        // 融合心情日记与 AI 对话，生成可追溯的情绪分析
+        function buildEmotionAnalysis() {
+            const userId = getCurrentUserId();
+            const messages = JSON.parse(localStorage.getItem(`chat_messages_${userId}`)) || [];
+            const userMsgs = messages.filter(m => m.isUser);
+
+            // 汇总情绪样本：日记（用户主动选择，权重2）+ 对话（关键词识别，权重1）
+            const samples = [];
+            diaries.forEach(d => {
+                const emotion = MOOD_TO_EMOTION[d.mood];
+                if (emotion && d.date) {
+                    samples.push({ date: d.date.slice(0, 10), emotion, source: 'diary' });
+                }
+            });
+            userMsgs.forEach(m => {
+                samples.push({
+                    date: (m.createdAt || '').slice(0, 10),
+                    emotion: detectEmotion(m.content).type,
+                    source: 'chat'
+                });
+            });
+
+            if (samples.length === 0) {
                 return {
-                    trend: [65],
-                    distribution: {'平静': 100},
+                    trend: [], labels: [], distribution: {},
+                    stats: { total: 0, diaryCount: 0, chatCount: 0 },
                     report: {
                         overall_status: '暂无数据',
                         main_emotion: '-',
                         fluctuation: '-',
-                        suggestion: '开始和心迹AI聊天，我会为你生成个性化的情绪分析和建议。'
+                        suggestion: '记录一篇心情日记，或与心迹AI聊聊，我会为你生成个性化的情绪分析和建议。'
                     }
                 };
             }
 
-            // 提取用户消息
-            const userMessages = messages.filter(m => m.isUser).map(m => m.content);
-            
-            // 分析每条消息的情绪
-            const emotionScores = [];
-            const emotionCounts = {'平静': 0, '开心': 0, '焦虑': 0, '难过': 0};
-            
-            userMessages.forEach(message => {
-                const emotion = detectEmotion(message);
-                emotionCounts[emotion.type]++;
-                emotionScores.push(emotion.score);
-            });
+            // 情绪分布（日记权重 ×2）
+            const weights = { '开心': 0, '平静': 0, '焦虑': 0, '生气': 0, '难过': 0 };
+            samples.forEach(s => weights[s.emotion] += (s.source === 'diary' ? 2 : 1));
+            const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
 
-            // 计算情绪趋势（最近7条消息的情绪分数）
-            const trend = emotionScores.slice(-7);
-            if (trend.length < 7) {
-                const defaultTrend = [65, 59, 80, 81, 56, 55, 70];
-                for (let i = trend.length; i < 7; i++) {
-                    trend.push(defaultTrend[i]);
-                }
-            }
-
-            // 计算情绪分布
-            const total = userMessages.length;
             const distribution = {};
-            Object.keys(emotionCounts).forEach(key => {
-                distribution[key] = total > 0 ? Math.round((emotionCounts[key] / total) * 100) : 0;
+            let assigned = 0, maxKey = '开心';
+            Object.keys(weights).forEach(key => {
+                if (weights[key] > 0) {
+                    distribution[key] = Math.round((weights[key] / totalWeight) * 100);
+                    assigned += distribution[key];
+                    if (weights[key] > weights[maxKey]) maxKey = key;
+                }
             });
+            // 修正四舍五入误差，保证合计 100%
+            if (assigned !== 100) distribution[maxKey] += (100 - assigned);
 
-            // 生成报告
-            const maxScore = Math.max(...trend);
-            const minScore = Math.min(...trend);
-            const fluctuation = maxScore - minScore;
-            
+            // 情绪趋势：按真实日期，取最近 7 个有记录的日子（当天日记:对话 = 6:4 融合）
+            const byDate = {};
+            samples.forEach(s => {
+                if (!s.date) return;
+                if (!byDate[s.date]) byDate[s.date] = { diary: [], chat: [] };
+                byDate[s.date][s.source].push(s.emotion);
+            });
+            const dates = Object.keys(byDate).sort().slice(-7);
+            const avgScore = arr => arr.length
+                ? arr.reduce((sum, e) => sum + EMOTION_META[e].score, 0) / arr.length
+                : null;
+            const trend = dates.map(dt => {
+                const dAvg = avgScore(byDate[dt].diary);
+                const cAvg = avgScore(byDate[dt].chat);
+                if (dAvg !== null && cAvg !== null) return Math.round(dAvg * 0.6 + cAvg * 0.4);
+                return Math.round(dAvg !== null ? dAvg : cAvg);
+            });
+            const labels = dates.map(dt => `${parseInt(dt.slice(5, 7), 10)}/${parseInt(dt.slice(8, 10), 10)}`);
+
+            // 报告
+            const mainEmotion = Object.keys(weights).reduce((a, b) => weights[a] >= weights[b] ? a : b);
+            const fluctuationRange = trend.length > 1 ? Math.max(...trend) - Math.min(...trend) : 0;
+
             return {
-                trend,
-                distribution,
+                trend, labels, distribution,
+                stats: {
+                    total: samples.length,
+                    diaryCount: samples.filter(s => s.source === 'diary').length,
+                    chatCount: samples.filter(s => s.source === 'chat').length
+                },
                 report: {
-                    overall_status: fluctuation < 20 ? '稳定' : '波动',
-                    main_emotion: Object.keys(distribution).reduce((a, b) => distribution[a] > distribution[b] ? a : b),
-                    fluctuation: fluctuation < 15 ? '低' : '高',
-                    suggestion: generateSuggestion(distribution, fluctuation)
+                    overall_status: trend.length < 2 ? '数据积累中' : (fluctuationRange < 20 ? '稳定' : '波动'),
+                    main_emotion: mainEmotion,
+                    fluctuation: trend.length < 2 ? '-' : (fluctuationRange < 15 ? '低' : '高'),
+                    suggestion: generateSuggestion(distribution, fluctuationRange)
                 }
             };
         }
 
-        // 情绪检测函数
+        // 近期心情记录：把分析依据直接展示出来
+        function renderDiaryEvidence() {
+            const container = document.getElementById('diaryEvidence');
+            if (!container) return;
+
+            if (diaries.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fa fa-pencil-square-o text-3xl mb-2"></i>
+                        <p class="text-sm">还没有心情日记。写下第一篇，这里就会成为情绪分析的依据。</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = diaries.slice(0, 5).map(d => {
+                const emotion = MOOD_TO_EMOTION[d.mood] || '平静';
+                const meta = EMOTION_META[emotion];
+                const date = new Date(d.date);
+                const dateStr = `${date.getMonth() + 1}月${date.getDate()}日`;
+                const content = (d.content || '').trim();
+                return `
+                    <div class="flex items-center space-x-4 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <span class="text-2xl flex-shrink-0">${meta.emoji}</span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-medium text-neutral">${d.mood}</span>
+                                <span class="text-xs text-gray-400">${dateStr}</span>
+                            </div>
+                            <p class="text-sm text-gray-500 truncate">${content ? escapeHtml(content) : '（无文字记录）'}</p>
+                        </div>
+                        <span class="text-xs px-2 py-1 rounded-full flex-shrink-0" style="background:${meta.color}1A;color:${meta.color}">指数 ${meta.score}</span>
+                    </div>`;
+            }).join('');
+        }
+
+        // 情绪检测函数（5 类；无任何关键词命中时才是平静，不再"保送"）
         function detectEmotion(message) {
-            const lowerMsg = message.toLowerCase();
-            
-            let sadnessScore = 0;
-            let happinessScore = 0;
-            let anxietyScore = 0;
-            let calmnessScore = 0;
-            
-            const sadnessWords = ['难过', '伤心', '悲伤', '失落', '沮丧', '痛苦', '绝望', '孤独', '寂寞', '委屈', '哭', '眼泪', '烦', '郁闷'];
-            const happinessWords = ['开心', '高兴', '快乐', '幸福', '兴奋', '激动', '愉快', '喜悦', '满足', '感恩', '棒', '好', '喜欢', '爱', '希望'];
-            const anxietyWords = ['压力', '焦虑', '紧张', '担心', '害怕', '恐惧', '不安', '烦躁', '生气', '愤怒', '讨厌', '累', '疲惫', '困'];
-            const calmnessWords = ['平静', '安静', '放松', '舒适', '惬意', '悠闲', '自在', '满足', '平和', '淡定'];
-            
-            sadnessWords.forEach(word => {
-                if (lowerMsg.includes(word)) sadnessScore += 15;
-            });
-            
-            happinessWords.forEach(word => {
-                if (lowerMsg.includes(word)) happinessScore += 15;
-            });
-            
-            anxietyWords.forEach(word => {
-                if (lowerMsg.includes(word)) anxietyScore += 15;
-            });
-            
-            calmnessWords.forEach(word => {
-                if (lowerMsg.includes(word)) calmnessScore += 15;
-            });
-            
+            const lowerMsg = (message || '').toLowerCase();
+
+            const sadnessWords = ['难过', '伤心', '悲伤', '失落', '沮丧', '痛苦', '绝望', '孤独', '寂寞', '委屈', '哭', '眼泪', '郁闷', '小丑'];
+            const happinessWords = ['开心', '高兴', '快乐', '幸福', '兴奋', '激动', '愉快', '喜悦', '满足', '感恩', '棒', '喜欢', '希望', '顺利'];
+            const anxietyWords = ['压力', '焦虑', '紧张', '担心', '害怕', '恐惧', '不安', '烦躁', '累', '疲惫', '困', '失眠', '考试'];
+            const angerWords = ['生气', '愤怒', '讨厌', '气死', '火大', '烦死', '暴躁', '无语'];
+            const calmnessWords = ['平静', '安静', '放松', '舒适', '惬意', '悠闲', '自在', '平和', '淡定'];
+
             const scores = {
-                '难过': Math.min(sadnessScore, 100),
-                '开心': Math.min(happinessScore, 100),
-                '焦虑': Math.min(anxietyScore, 100),
-                '平静': Math.min(calmnessScore + 30, 100)
+                '难过': Math.min(sadnessWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
+                '开心': Math.min(happinessWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
+                '焦虑': Math.min(anxietyWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
+                '生气': Math.min(angerWords.filter(w => lowerMsg.includes(w)).length * 20, 100),
+                '平静': Math.min(calmnessWords.filter(w => lowerMsg.includes(w)).length * 20, 100)
             };
-            
+
             let maxEmotion = '平静';
-            let maxScore = 65;
-            
+            let maxScore = 0;
             Object.keys(scores).forEach(emotion => {
                 if (scores[emotion] > maxScore) {
                     maxScore = scores[emotion];
                     maxEmotion = emotion;
                 }
             });
-            
-            const overallScore = 30 + happinessScore * 0.4 - sadnessScore * 0.3 - anxietyScore * 0.2 + calmnessScore * 0.2;
-            
-            return { 
-                type: maxEmotion, 
-                score: Math.max(10, Math.min(95, overallScore)),
+            // 没有任何关键词命中时才归为平静
+            if (maxScore === 0) {
+                return { type: '平静', score: EMOTION_META['平静'].score, details: scores };
+            }
+
+            return {
+                type: maxEmotion,
+                score: EMOTION_META[maxEmotion].score,
                 details: scores
             };
         }
@@ -3514,18 +3556,21 @@
         // 生成建议
         function generateSuggestion(distribution, fluctuation) {
             if (distribution['难过'] > 30) {
-                return '建议多与朋友交流，或者做一些让自己开心的事情。';
+                return '最近难过的情绪比较多，建议多与朋友交流，或做一些让自己放松的事情。我一直都在。';
             }
             if (distribution['焦虑'] > 30) {
-                return '建议尝试深呼吸、冥想等放松技巧，缓解焦虑情绪。';
+                return '焦虑占比较高，建议尝试深呼吸、冥想等放松技巧，把大目标拆成小步骤会轻松一些。';
+            }
+            if (distribution['生气'] > 30) {
+                return '最近似乎有些让你气愤的事，试试写下来或者运动发泄，情绪需要出口。';
             }
             if (fluctuation > 25) {
-                return '情绪波动较大，建议保持规律的生活作息。';
+                return '情绪波动较大，建议保持规律的作息和饮食，稳定的生活节奏有助于情绪平稳。';
             }
             if (distribution['开心'] > 40) {
-                return '保持积极心态，继续加油！';
+                return '最近状态很棒，保持积极心态，继续加油！';
             }
-            return '继续保持积极心态，如有需要可以随时与我聊天。';
+            return '继续保持记录的好习惯，如有需要可以随时与我聊天。';
         }
         
         // 全局图表实例，防止重复创建
@@ -3553,42 +3598,60 @@
             
             // 情绪趋势图
             const emotionChartCtx = document.getElementById('emotionChart');
+            const trendEmptyEl = document.getElementById('trendEmpty');
+            const pieEmptyEl = document.getElementById('pieEmpty');
+            const hasData = data.trend && data.trend.length > 0;
+
+            // 空态提示显隐
+            if (trendEmptyEl) trendEmptyEl.classList.toggle('hidden', hasData);
+            if (pieEmptyEl) pieEmptyEl.classList.toggle('hidden', hasData);
+
             if (emotionChartCtx) {
                 if (lineChartInstance) {
                     lineChartInstance.destroy();
+                    lineChartInstance = null;
                 }
-                
-                const labels = data.trend.map((_, i) => `第${i + 1}条`);
-                
-                lineChartInstance = new Chart(emotionChartCtx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: '情绪指数',
-                            data: data.trend,
-                            borderColor: '#4F46E5',
-                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
+
+                if (hasData) {
+                    const labels = data.labels || data.trend.map((_, i) => `第${i + 1}条`);
+
+                    lineChartInstance = new Chart(emotionChartCtx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: '情绪指数',
+                                data: data.trend,
+                                borderColor: '#4F46E5',
+                                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 5,
+                                pointBackgroundColor: '#4F46E5'
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        title: items => `日期：${items[0].label}`
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                }
             }
             
             // 情绪分布图
@@ -3596,13 +3659,15 @@
             if (emotionPieChartCtx) {
                 if (pieChartInstance) {
                     pieChartInstance.destroy();
+                    pieChartInstance = null;
                 }
-                
-                const labels = Object.keys(data.distribution);
-                const values = Object.values(data.distribution);
-                const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6'];
-                
-                pieChartInstance = new Chart(emotionPieChartCtx, {
+
+                if (hasData) {
+                    const labels = Object.keys(data.distribution);
+                    const values = Object.values(data.distribution);
+                    const colors = labels.map(l => (EMOTION_META[l] || {}).color || '#8B5CF6');
+
+                    pieChartInstance = new Chart(emotionPieChartCtx, {
                     type: 'doughnut',
                     data: {
                         labels: labels,
@@ -3626,7 +3691,8 @@
                         },
                         cutout: '60%'
                     }
-                });
+                    });
+                }
             }
             
             // 更新报告内容
@@ -4157,6 +4223,12 @@
             });
             
             showToast('日记保存成功！', 'success');
+
+            // 若情绪分析页可见，联动刷新分析数据
+            const analysisWindow = document.getElementById('analysis');
+            if (analysisWindow && analysisWindow.classList.contains('window-active')) {
+                initCharts();
+            }
         }
         
         function renderDiaryList() {
