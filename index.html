@@ -768,8 +768,8 @@
                                 <div class="flex justify-center">
                                     <div id="moodTree" class="relative w-64 h-72">
                                         <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-20 bg-gradient-to-t from-amber-700 to-amber-500 rounded"></div>
-                                        <div id="treeCrown" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-24 bg-gradient-to-br from-green-300 to-green-400 rounded-full flex items-center justify-center transition-all duration-1000">
-                                            <span class="text-5xl">🌱</span>
+                                        <div id="treeCrown" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-36 h-36 bg-gradient-to-br from-green-300 to-green-400 rounded-full flex items-center justify-center transition-all duration-1000">
+                                            <span class="text-4xl">🌱</span>
                                         </div>
                                         <div id="treeGlow" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-48 h-48 rounded-full hidden" style="box-shadow: 0 0 42px 10px rgba(253,224,71,.55);"></div>
                                         <div id="treeFruits" class="absolute top-4 left-1/2 transform -translate-x-1/2 w-full h-full pointer-events-none"></div>
@@ -4219,9 +4219,10 @@
         // 规则：每篇日记 = 一颗心情果；心情决定果子种类；树随记录天数成长
         const MOOD_FRUITS = { '开心': '🍎', '平静': '🍐', '悲伤': '🫐', '生气': '🌶️', '焦虑': '🍋' };
         const TREE_STAGES = [
-            { min: 1,  emoji: '🌱', size: 'w-32 h-32', grad: 'from-green-300 to-green-500', label: '幼苗成长' },
-            { min: 7,  emoji: '🌳', size: 'w-48 h-48', grad: 'from-green-400 to-green-600', label: '枝繁叶茂' },
-            { min: 30, emoji: '🌳', size: 'w-48 h-48', grad: 'from-green-500 to-emerald-600', label: '硕果累累' }
+            { min: 0,  emoji: '🌱', size: 'w-36 h-36', esize: 'text-4xl', grad: 'from-green-300 to-green-400', label: '等待发芽' },
+            { min: 1,  emoji: '🌳', size: 'w-44 h-44', esize: 'text-5xl', grad: 'from-green-300 to-green-500', label: '茁壮成长' },
+            { min: 7,  emoji: '🌳', size: 'w-48 h-48', esize: 'text-6xl', grad: 'from-green-400 to-green-600', label: '枝繁叶茂' },
+            { min: 30, emoji: '🌳', size: 'w-48 h-48', esize: 'text-6xl', grad: 'from-green-500 to-emerald-600', label: '硕果累累' }
         ];
 
         // 树冠上 30 个固定果位（三圈椭圆分布，顺序固定，果子位置永不跳动）
@@ -4257,7 +4258,7 @@
             for (const s of TREE_STAGES) if (total >= s.min) stage = s;
             if (crownEl) {
                 crownEl.className = `absolute top-0 left-1/2 transform -translate-x-1/2 ${stage.size} bg-gradient-to-br ${stage.grad} rounded-full flex items-center justify-center transition-all duration-1000`;
-                crownEl.innerHTML = `<span class="${total >= 7 ? 'text-6xl' : 'text-5xl'}">${stage.emoji}</span>`;
+                crownEl.innerHTML = `<span class="${stage.esize}">${stage.emoji}</span>`;
             }
             if (glowEl) glowEl.classList.toggle('hidden', total < 30);
             if (stageEl) stageEl.textContent = total > 0 ? `当前阶段：${stage.label}` : '记下第一篇日记，让种子发芽吧';
